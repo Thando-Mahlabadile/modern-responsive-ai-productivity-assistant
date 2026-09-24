@@ -386,14 +386,13 @@ function EmailGenerator({
 }) {
   const [purpose, setPurpose] = useState("");
   const [context, setContext] = useState("");
-  const [points, setPoints] = useState("");
   const [tone, setTone] = useState<Tone>(defaultTone);
   const [result, setResult] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const generate = () => {
-    if (!purpose.trim() || !context.trim() || !points.trim()) {
-      setError("Add the purpose, recipient context, and key points before generating.");
+    if (!purpose.trim() || !context.trim()) {
+      setError("Add the purpose and recipient context before generating.");
       return;
     }
     setError("");
@@ -412,13 +411,7 @@ function EmailGenerator({
             ? "Best,"
             : "I’d welcome the opportunity to discuss the next step.";
       setResult(
-        `Subject: ${purpose.trim()}\n\nHello,\n\n${opening}\n\nI’m writing regarding ${purpose.trim().toLowerCase()}. With ${context.trim()}, I wanted to highlight the following:\n\n${points
-          .split(/\n|,/)
-          .filter(Boolean)
-          .map((point) => `• ${point.trim()}`)
-          .join(
-            "\n",
-          )}\n\nPlease let me know if you have any questions or would like to discuss this further.\n\n${close}\nThando`,
+        `Subject: ${purpose.trim()}\n\nHello,\n\n${opening}\n\nI’m writing regarding ${purpose.trim().toLowerCase()}. With ${context.trim()}, I wanted to reach out directly so you have the full picture.\n\nPlease let me know if you have any questions or would like to discuss this further.\n\n${close}\nThando`,
       );
       setLoading(false);
       record({ title: "Email draft created", detail: purpose, time: "Just now", icon: Mail });
@@ -445,16 +438,8 @@ function EmailGenerator({
               <Textarea
                 value={context}
                 onChange={(e) => setContext(e.target.value)}
-                className="min-h-24"
-                placeholder="Who are you writing to, and what do they already know?"
-              />
-            </Field>
-            <Field label="Key points">
-              <Textarea
-                value={points}
-                onChange={(e) => setPoints(e.target.value)}
                 className="min-h-32"
-                placeholder="Add one point per line"
+                placeholder="Who are you writing to, and what do they already know?"
               />
             </Field>
             <Field label="Tone">
