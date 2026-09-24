@@ -1,4 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useChat } from "@ai-sdk/react";
+import { DefaultChatTransport, type UIMessage } from "ai";
 import {
   ArrowRight,
   Bot,
@@ -24,7 +26,7 @@ import {
   WandSparkles,
   X,
 } from "lucide-react";
-import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -77,7 +79,6 @@ export const Route = createFileRoute("/")({
 type View = "dashboard" | "email" | "meeting" | "chat" | "settings";
 type Tone = "Formal" | "Friendly" | "Persuasive";
 type Activity = { title: string; detail: string; time: string; icon: typeof Mail };
-type ChatMessage = { id: number; role: "user" | "assistant"; content: string };
 
 const navItems: { id: View; label: string; icon: typeof Home }[] = [
   { id: "dashboard", label: "Dashboard", icon: Home },
@@ -242,7 +243,7 @@ function WorkmateApp() {
           <div className="flex items-center gap-3">
             <span className="hidden items-center gap-2 text-xs font-medium text-muted-foreground sm:flex">
               <span className="size-2 rounded-full bg-success" />
-              Local prototype
+              Live AI
             </span>
             <span className="grid size-9 place-items-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
               TM
@@ -390,32 +391,32 @@ function EmailGenerator({
   const [result, setResult] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const generate = () => {
+  const generate = async () => {
     if (!purpose.trim() || !context.trim()) {
       setError("Add the purpose and recipient context before generating.");
       return;
     }
     setError("");
     setLoading(true);
-    setTimeout(() => {
-      const opening =
-        tone === "Formal"
-          ? "I hope this message finds you well."
-          : tone === "Friendly"
-            ? "I hope you're having a good week."
-            : "I’m reaching out with an opportunity to move this forward.";
-      const close =
-        tone === "Formal"
-          ? "Kind regards,"
-          : tone === "Friendly"
-            ? "Best,"
-            : "I’d welcome the opportunity to discuss the next step.";
-      setResult(
-        `Subject: ${purpose.trim()}\n\nHello,\n\n${opening}\n\nI’m writing regarding ${purpose.trim().toLowerCase()}. With ${context.trim()}, I wanted to reach out directly so you have the full picture.\n\nPlease let me know if you have any questions or would like to discuss this further.\n\n${close}\nThando`,
-      );
+    try {
+      const response = await fetch("/api/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ task: "email", purpose, context, tone }),
+      });
+      const data = (await response.json()) as { text?: string; error?: string };
+      if (!response.ok || !data.text) throw new Error(data.error || "Could not generate the email.");
+      setResult(data.text);
       setLoading(false);
       record({ title: "Email draft created", detail: purpose, time: "Just now", icon: Mail });
-    }, 850);
+    } catch (generationError) {
+      setLoading(false);
+      setError(
+        generationError instanceof Error
+          ? generationError.message
+          : "Could not generate the email. Please try again.",
+      );
+    }
   };
   return (
     <div className="space-y-6">
@@ -524,33 +525,22 @@ function MeetingSummariser({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [sections, setSections] = useState<Record<string, string> | null>(null);
-  const summarise = () => {
+  const summarise = async () => {
     if (notes.trim().length < 40) {
       setError("Add a little more detail so the summary can identify useful outcomes.");
       return;
     }
     setError("");
     setLoading(true);
-    setTimeout(() => {
-      const lines = notes
-        .split(/[\n.!?]+/)
-        .map((s) => s.trim())
-        .filter((s) => s.length > 8);
-      const action = lines.find((l) => /will|action|owner|follow up|send|prepare/i.test(l));
-      const decision = lines.find((l) => /decid|agreed|approve|choose|selected/i.test(l));
-      const deadline = lines.find((l) => /by |deadline|friday|monday|week|month|date/i.test(l));
-      setSections({
-        Summary: `${concise ? "The team aligned on the main priorities" : "The meeting focused on priorities, ownership, and delivery considerations"}. ${lines.slice(0, 2).join(". ")}.`,
-        "Action Items": action
-          ? `• ${action}`
-          : "• Confirm owners for each next step\n• Share the updated plan with stakeholders",
-        Decisions: decision ? `• ${decision}` : "• No explicit final decision was recorded",
-        Deadlines: deadline ? `• ${deadline}` : "• No firm deadline was captured",
-        "Key Points": lines
-          .slice(0, 4)
-          .map((l) => `• ${l}`)
-          .join("\n"),
+    try {
+      const response = await fetch("/api/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ task: "meeting", notes, concise }),
       });
+      const data = (await response.json()) as { text?: string; error?: string };
+      if (!response.ok || !data.text) throw new Error(data.error || "Could not summarise the notes.");
+      setSections(parseMeetingSections(data.text));
       setLoading(false);
       record({
         title: "Meeting notes summarised",
@@ -558,7 +548,14 @@ function MeetingSummariser({
         time: "Just now",
         icon: ClipboardCheck,
       });
-    }, 950);
+    } catch (summaryError) {
+      setLoading(false);
+      setError(
+        summaryError instanceof Error
+          ? summaryError.message
+          : "Could not summarise the notes. Please try again.",
+      );
+    }
   };
   const allText = sections
     ? Object.entries(sections)
@@ -673,19 +670,28 @@ const suggestions = [
   "Brainstorm ideas for a team workshop",
   "Create an agenda for a project kickoff",
 ];
-function createChatReply(prompt: string, concise: boolean) {
-  const p = prompt.toLowerCase();
-  if (p.includes("priority") || p.includes("plan"))
-    return `Here’s a focused way to structure it:\n\n1. **Choose one outcome that matters most** — make it specific and measurable.\n2. **Protect two focused work blocks** — schedule these before meetings fill the week.\n3. **Group smaller tasks** — handle messages and admin in two short batches.\n4. **Define Friday's finish line** — decide what must be complete, delegated, or intentionally deferred.\n\nStart by listing your top five commitments and I can help you rank them by impact and urgency.`;
-  if (p.includes("rewrite") || p.includes("message") || p.includes("email"))
-    return `Absolutely. Paste the original message and tell me who will receive it. I’ll preserve the meaning while making it **clearer, more confident, and appropriately concise**.${concise ? "" : " I can also provide two tone variations so you can compare them."}`;
-  if (p.includes("brainstorm") || p.includes("workshop"))
-    return `Try a **“What would make this easier?” workshop**:\n\n- 5 minutes: silent challenge mapping\n- 10 minutes: group similar friction points\n- 15 minutes: generate solutions without evaluating them\n- 10 minutes: vote on impact and effort\n- 5 minutes: assign one experiment and an owner\n\nThe output is practical: one testable idea, one owner, and one review date.`;
-  if (p.includes("agenda") || p.includes("meeting"))
-    return `## Project kickoff agenda\n\n- **5 min** — Purpose and desired outcome\n- **10 min** — Scope, success measures, and constraints\n- **10 min** — Roles and decision ownership\n- **10 min** — Milestones, dependencies, and risks\n- **10 min** — Immediate actions and owners\n- **5 min** — Confirm decisions and next check-in\n\nSend the project context and meeting length if you want this tailored.`;
-  if (p.includes("summary") || p.includes("summarise"))
-    return `Send me the material you want condensed. I’ll organise it into **key message, decisions, actions, owners, and deadlines** so the output is useful—not just shorter.`;
-  return `I can help turn that into a practical workplace outcome. A strong next step is to define **what you need, who it is for, and when it must be ready**. Share those three details and I’ll shape a clear draft or action plan.`;
+
+const meetingMarkers = ["SUMMARY", "ACTION ITEMS", "DECISIONS", "DEADLINES", "KEY POINTS"];
+
+function parseMeetingSections(text: string) {
+  const sections: Record<string, string> = {};
+  meetingMarkers.forEach((marker, index) => {
+    const start = text.indexOf(`[${marker}]`);
+    const nextMarker = meetingMarkers[index + 1];
+    const end = nextMarker ? text.indexOf(`[${nextMarker}]`) : text.length;
+    const title = marker
+      .toLowerCase()
+      .replace(/\b\w/g, (letter) => letter.toUpperCase());
+    sections[title] = start >= 0 ? text.slice(start + marker.length + 2, end).trim() : "Not captured.";
+  });
+  return sections;
+}
+
+function messageText(message: UIMessage) {
+  return message.parts
+    .filter((part) => part.type === "text")
+    .map((part) => part.text)
+    .join("");
 }
 
 function WorkplaceChat({
@@ -695,31 +701,30 @@ function WorkplaceChat({
   record: (activity: Activity) => void;
   concise: boolean;
 }) {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [status, setStatus] = useState<"ready" | "submitted">("ready");
+  const transport = useMemo(
+    () => new DefaultChatTransport({ api: "/api/chat", body: { concise } }),
+    [concise],
+  );
+  const { messages, sendMessage, status, error, setMessages, clearError } = useChat({
+    id: "workmate-session",
+    transport,
+  });
+  const [editingId, setEditingId] = useState<string | null>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   useEffect(() => {
     inputRef.current?.focus();
   }, [status]);
-  const send = (text: string) => {
+  const send = async (text: string) => {
     const clean = text.trim();
-    if (!clean || status === "submitted") return;
-    const user: ChatMessage = { id: Date.now(), role: "user", content: clean };
-    setMessages((items) => [...items, user]);
-    setStatus("submitted");
-    setTimeout(() => {
-      setMessages((items) => [
-        ...items,
-        { id: Date.now() + 1, role: "assistant", content: createChatReply(clean, concise) },
-      ]);
-      setStatus("ready");
-      record({
-        title: "AI Assistant conversation",
-        detail: clean,
-        time: "Just now",
-        icon: MessageSquareText,
-      });
-    }, 850);
+    if (!clean || status === "submitted" || status === "streaming") return;
+    clearError();
+    await sendMessage({ text: clean });
+    record({
+      title: "AI Assistant conversation",
+      detail: clean,
+      time: "Just now",
+      icon: MessageSquareText,
+    });
   };
   return (
     <div className="space-y-6">
@@ -782,17 +787,56 @@ function WorkplaceChat({
                   <MessageContent
                     className={message.role === "user" ? "bg-primary text-primary-foreground" : ""}
                   >
-                    <MessageResponse>{message.content}</MessageResponse>
+                    {editingId === message.id && message.role === "assistant" ? (
+                      <Textarea
+                        value={messageText(message)}
+                        onChange={(event) =>
+                          setMessages((current) =>
+                            current.map((item) =>
+                              item.id === message.id
+                                ? { ...item, parts: [{ type: "text", text: event.target.value }] }
+                                : item,
+                            ),
+                          )
+                        }
+                        className="min-h-36"
+                        autoFocus
+                      />
+                    ) : (
+                      message.parts.map((part, index) =>
+                        part.type === "text" ? (
+                          <MessageResponse key={`${message.id}-${index}`}>{part.text}</MessageResponse>
+                        ) : null,
+                      )
+                    )}
                   </MessageContent>
+                  {message.role === "assistant" && messageText(message) && (
+                    <div className="flex gap-2">
+                      <CopyButton text={messageText(message)} />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setEditingId((current) => (current === message.id ? null : message.id))}
+                      >
+                        {editingId === message.id ? <Check /> : <FileText />}
+                        {editingId === message.id ? "Done" : "Edit"}
+                      </Button>
+                    </div>
+                  )}
                 </Message>
               ))
             )}
-            {status === "submitted" && (
+            {(status === "submitted" || (status === "streaming" && !messageText(messages.at(-1) ?? { id: "", role: "assistant", parts: [] }))) && (
               <Message from="assistant">
                 <MessageContent>
                   <Shimmer>Thinking through your request…</Shimmer>
                 </MessageContent>
               </Message>
+            )}
+            {error && (
+              <p role="alert" className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+                {error.message}
+              </p>
             )}
           </ConversationContent>
           <ConversationScrollButton />
@@ -810,8 +854,8 @@ function WorkplaceChat({
                   Enter to send · Shift + Enter for a new line
                 </span>
                 <PromptInputSubmit
-                  status={status === "submitted" ? "submitted" : "ready"}
-                  disabled={status === "submitted"}
+                  status={status}
+                  disabled={status === "submitted" || status === "streaming"}
                 />
               </PromptInputFooter>
             </PromptInput>
