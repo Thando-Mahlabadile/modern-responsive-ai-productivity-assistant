@@ -13,6 +13,7 @@ import {
   Copy,
   FileText,
   Home,
+  Info,
   Lightbulb,
   Mail,
   Menu,
@@ -878,6 +879,11 @@ function SettingsView({
   setConcise: (value: boolean) => void;
 }) {
   const disclaimerItems = [
+    "Outputs may be inaccurate or incomplete. Cross-check facts, names, and dates.",
+    "Do not submit confidential info. You are responsible for shared content.",
+    "Summaries are for productivity only, not professional advice.",
+    "Developers are not liable for reliance on AI outputs or missed items.",
+  ];
   return (
     <div className="max-w-3xl space-y-6">
       <PageIntro
