@@ -2,9 +2,13 @@
 
 A modern, responsive **AI Workplace Productivity Assistant** designed to help professionals streamline everyday workplace tasks through AI-powered productivity tools.
 
-The application provides an intuitive SaaS-style dashboard with tools for generating professional emails, summarising meeting notes, extracting important information, and interacting with an AI workplace assistant.
+## Author
 
-> **Note:** This project is currently designed as a frontend-focused application and does not require a backend, database, or authentication system.
+**Thando Mahlabadile**
+
+* **GitHub Repository:** `https://github.com/your-username/ai-workplace-productivity-assistant`
+* **Live Application:** `https://synth-assist-desk.lovable.app`
+
 
 ## Project Overview
 
@@ -16,7 +20,7 @@ Users can:
 * Choose different email tones such as Formal, Friendly, and Persuasive.
 * Summarise lengthy meeting notes.
 * Extract key points, action items, decisions, and deadlines from meeting notes.
-* Interact with an AI workplace chatbot using custom prompts.
+* Interact with an AI workplace assistant using custom prompts.
 * Edit and copy AI-generated responses.
 * Access responsible AI guidance through the Settings menu.
 
@@ -106,7 +110,7 @@ The application is built as a modern frontend web application using technologies
 git clone https://github.com/your-username/ai-workplace-productivity-assistant.git
 ```
 
-Replace `https://synth-assist-desk.lovable.app` with your GitHub username and use the actual repository URL.
+Replace `your-username` with your GitHub username and use the actual repository URL.
 
 ### 2. Navigate to the Project
 
