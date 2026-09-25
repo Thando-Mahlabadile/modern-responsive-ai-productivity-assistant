@@ -922,12 +922,29 @@ function SettingsView({
       </Panel>
       <Panel className="p-5">
         <div className="flex gap-3">
+          <Info className="mt-0.5 size-5 shrink-0 text-primary" />
+          <div>
+            <h2 className="font-extrabold">AI Disclaimer / Responsible AI Use</h2>
+            <ul className="mt-2 space-y-1.5 text-sm leading-relaxed text-muted-foreground">
+              {disclaimerItems.map((item) => (
+                <li key={item} className="flex gap-2">
+                  <span aria-hidden className="mt-2 size-1.5 shrink-0 rounded-full bg-primary/60" />
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </Panel>
+      <Panel className="p-5">
+        <div className="flex gap-3">
           <ShieldCheck className="mt-0.5 size-5 shrink-0 text-primary" />
           <div>
             <h2 className="font-extrabold">Privacy by design</h2>
             <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-              This prototype runs entirely in your browser. Nothing is sent to a server, and your
-              session resets when the page reloads.
+              Your work stays in this browser session and resets when the page reloads. Requests are
+              processed by the AI service when you generate content, and nothing is stored on your
+              behalf.
             </p>
           </div>
         </div>
