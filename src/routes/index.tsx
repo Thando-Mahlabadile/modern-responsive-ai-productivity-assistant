@@ -13,6 +13,7 @@ import {
   Copy,
   FileText,
   Home,
+  Info,
   Lightbulb,
   Mail,
   Menu,
@@ -245,8 +246,11 @@ function WorkmateApp() {
               <span className="size-2 rounded-full bg-success" />
               Live AI
             </span>
-            <span className="grid size-9 place-items-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
-              TM
+            <span
+              aria-label="Workspace"
+              className="grid size-9 place-items-center rounded-full bg-primary text-primary-foreground"
+            >
+              <Bot className="size-4" />
             </span>
           </div>
         </header>
@@ -294,7 +298,7 @@ function Dashboard({
         <div>
           <p className="mb-2 text-sm font-bold text-primary">YOUR WORKSPACE</p>
           <h1 className="max-w-2xl text-3xl font-extrabold leading-tight md:text-4xl">
-            Good afternoon, Thando.
+            Good afternoon.
           </h1>
           <p className="mt-2 text-muted-foreground">What would you like to move forward today?</p>
         </div>
@@ -877,6 +881,12 @@ function SettingsView({
   concise: boolean;
   setConcise: (value: boolean) => void;
 }) {
+  const disclaimerItems = [
+    "Outputs may be inaccurate or incomplete. Cross-check facts, names, and dates.",
+    "Do not submit confidential info. You are responsible for shared content.",
+    "Summaries are for productivity only, not professional advice.",
+    "Developers are not liable for reliance on AI outputs or missed items.",
+  ];
   return (
     <div className="max-w-3xl space-y-6">
       <PageIntro
@@ -915,12 +925,29 @@ function SettingsView({
       </Panel>
       <Panel className="p-5">
         <div className="flex gap-3">
+          <Info className="mt-0.5 size-5 shrink-0 text-primary" />
+          <div>
+            <h2 className="font-extrabold">AI Disclaimer / Responsible AI Use</h2>
+            <ul className="mt-2 space-y-1.5 text-sm leading-relaxed text-muted-foreground">
+              {disclaimerItems.map((item) => (
+                <li key={item} className="flex gap-2">
+                  <span aria-hidden className="mt-2 size-1.5 shrink-0 rounded-full bg-primary/60" />
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </Panel>
+      <Panel className="p-5">
+        <div className="flex gap-3">
           <ShieldCheck className="mt-0.5 size-5 shrink-0 text-primary" />
           <div>
             <h2 className="font-extrabold">Privacy by design</h2>
             <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-              This prototype runs entirely in your browser. Nothing is sent to a server, and your
-              session resets when the page reloads.
+              Your work stays in this browser session and resets when the page reloads. Requests are
+              processed by the AI service when you generate content, and nothing is stored on your
+              behalf.
             </p>
           </div>
         </div>
