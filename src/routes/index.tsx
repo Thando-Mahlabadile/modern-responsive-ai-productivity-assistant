@@ -294,7 +294,7 @@ function Dashboard({
         <div>
           <p className="mb-2 text-sm font-bold text-primary">YOUR WORKSPACE</p>
           <h1 className="max-w-2xl text-3xl font-extrabold leading-tight md:text-4xl">
-            Good afternoon, Thando.
+            Good afternoon.
           </h1>
           <p className="mt-2 text-muted-foreground">What would you like to move forward today?</p>
         </div>
@@ -877,6 +877,7 @@ function SettingsView({
   concise: boolean;
   setConcise: (value: boolean) => void;
 }) {
+  const disclaimerItems = [
   return (
     <div className="max-w-3xl space-y-6">
       <PageIntro
