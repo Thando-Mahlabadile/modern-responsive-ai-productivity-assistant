@@ -246,8 +246,11 @@ function WorkmateApp() {
               <span className="size-2 rounded-full bg-success" />
               Live AI
             </span>
-            <span className="grid size-9 place-items-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
-              TM
+            <span
+              aria-label="Workspace"
+              className="grid size-9 place-items-center rounded-full bg-primary text-primary-foreground"
+            >
+              <Bot className="size-4" />
             </span>
           </div>
         </header>
