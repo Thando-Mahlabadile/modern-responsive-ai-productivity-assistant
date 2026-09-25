@@ -6,7 +6,7 @@ A modern, responsive **AI Workplace Productivity Assistant** designed to help pr
 
 **Thando Mahlabadile**
 
-* **GitHub Repository:** `https://github.com/your-username/ai-workplace-productivity-assistant`
+* **GitHub Repository:** `https://github.com/Thando-Mahlabadile/modern-responsive-ai-productivity-assistant`
 * **Live Application:** `https://synth-assist-desk.lovable.app`
 
 
